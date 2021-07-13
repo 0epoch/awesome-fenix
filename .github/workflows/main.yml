@@ -1,4 +1,4 @@
-name: Generate Github-Pages from markdown files
+name: Generate PDF
 
 on:
   push:
@@ -21,21 +21,20 @@ jobs:
 
       - uses: actions/checkout@v2
 
+      - name: Install Rclone
+        run: curl https://rclone.org/install.sh | sudo bash
+
+      - name: Rclone conf
+        run: |
+          mkdir -p ~/.config/rclone/
+          cat >  ~/.config/rclone/rclone.conf  << EOF
+          ${{ secrets.RCLONE_CONF }}
+          EOF
+
       - name: Run Export
         run: |
           export TZ='Asia/Shanghai'
           npm install
-          npm run build
-          echo "icyfenix.cn" >> .vuepress/dist/CNAME
-
-      - name: Deploy Github-Pages
-        uses: JamesIves/github-pages-deploy-action@4.1.4
-        with:
-          branch: gh-pages
-          folder: .vuepress/dist
-
-      - name: Refresh CDN
-        run: npm run deoply:refresh-cdn
-        env:
-          CDN_ID: ${{ secrets.CDN_ID }}
-          CDN_KEY: ${{ secrets.CDN_KEY }}
+          npm run export
+      - name: Upload File
+        run: rclone copy ./*.pdf jg:notes
